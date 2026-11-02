@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GENOX — Autonomous Omni-Agent Command Center</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/style.css?v=14">
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+</head>
+<body>
+  <!-- Neural Wave Background & Grid -->
+  <div class="neural-wave-bg"></div>
+  <canvas id="particleCanvas"></canvas>
+  <div class="hud-grid-overlay"></div>
+
+  <div class="command-center-layout">
+    <!-- LEFT NAVIGATION RAIL (GENOX SIDEBAR) -->
+    <aside class="sidebar-rail">
+      <div>
+        <div class="sidebar-header">
+          <div class="core-avatar-icon">
+            <img src="/assets/avatar.jpg" alt="Genox Avatar">
+          </div>
+          <div>
+            <div class="sidebar-brand-title">GENOX</div>
+            <div class="sidebar-brand-tag">AUTONOMOUS OMNI-AGENT</div>
+          </div>
+        </div>
+
+        <nav class="sidebar-menu">
+          <div class="nav-item active" data-view="dashboard">
+            <div class="nav-item-left">
+              <span>🎛️</span>
+              <span>Command Center</span>
+            </div>
+          </div>
+
+          <div class="nav-item" data-view="aicore">
+            <div class="nav-item-left">
+              <span>🌐</span>
+              <span>AI Core</span>
+            </div>
+          </div>
+
+          <div class="nav-item" data-view="agents">
+            <div class="nav-item-left">
+              <span>🤖</span>
+              <span>Agents</span>
+            </div>
+            <span class="nav-badge">6</span>
+          </div>
+
+          <div class="nav-item" data-view="files">
+            <div class="nav-item-left">
+              <span>📁</span>
+              <span>Workspace Files</span>
+            </div>
+          </div>
+
+          <div class="nav-item" data-view="memory">
+            <div class="nav-item-left">
+              <span>🧠</span>
+              <span>Memory Bank</span>
+            </div>
+          </div>
+
+          <div class="nav-item" data-view="tools">
+            <div class="nav-item-left">
+              <span>⚙️</span>
+              <span>Tools & Skills</span>
+            </div>
+            <span class="nav-badge" id="toolsCountBadge">14</span>
+          </div>
+
+          <div class="nav-item" data-view="logs">
+            <div class="nav-item-left">
+              <span>📜</span>
+              <span>Audit Logs</span>
+            </div>
+          </div>
+        </nav>
+      </div>
+
+      <!-- Sidebar Bottom: Voice Status Station -->
+      <div class="sidebar-voice-station" id="voiceStation">
+        <div class="voice-status-row">
+          <span>VOICE WAKE WORD</span>
+          <span id="voiceStatusText" style="color: var(--accent-emerald);">"HEY GENOX"</span>
+        </div>
+
+        <div class="voice-pulse-card" id="wakeWordStationCard" title="Say 'Genox' anytime or click to speak">
+          <div class="voice-mic-orb" id="sidebarMicBtn" title="Wake Word Active">
+            <svg width="18" height="18" fill="#fff" viewBox="0 0 24 24"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/><path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/></svg>
+          </div>
+          <div style="flex: 1;">
+            <div style="font-size: 0.75rem; font-weight: 700;" id="speechStateLabel">Say "Genox"...</div>
+            <div class="voice-wave-bars" id="sidebarVoiceBars">
+              <span class="voice-wave-bar"></span>
+              <span class="voice-wave-bar"></span>
+              <span class="voice-wave-bar"></span>
+              <span class="voice-wave-bar"></span>
+              <span class="voice-wave-bar"></span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- MAIN DASHBOARD WORKSPACE -->
+    <main class="main-stage">
+      <!-- Topbar HUD Header -->
+      <header class="stage-topbar">
+        <div class="topbar-left">
+          <div class="status-capsule" id="statusCapsule">
+            <span class="status-dot-pulse"></span>
+            <span id="systemStatusLabel">SYSTEM STATUS: OPTIMAL</span>
+          </div>
+        </div>
+
+        <div class="topbar-center">
+          <div class="live-digital-clock" id="liveClock">11:18:21 AM</div>
+          <div class="live-date-string" id="liveDate">MONDAY, 14 OCTOBER 2026</div>
+        </div>
+
+        <div class="topbar-right">
+          <div class="topbar-search-box">
+            <span>🔍</span>
+            <span style="font-size: 0.75rem; color: var(--text-dim);">Quick command...</span>
+            <span style="margin-left: auto; font-family: var(--font-mono); font-size: 0.68rem; padding: 1px 5px; border-radius: 4px; background: rgba(255,255,255,0.08);">⌘K</span>
+          </div>
+
+          <!-- WAKE WORD TOGGLE BUTTON -->
+          <button id="wakeWordToggleBtn" class="topbar-btn active" title="Toggle 'Genox' Voice Wake Detection (like Siri)">
+            <span class="status-dot-pulse" style="background: var(--accent-emerald); box-shadow: 0 0 10px var(--accent-emerald);"></span>
+            <span id="wakeWordLabel">WAKE: "GENOX" ON</span>
+          </button>
+
+          <button id="voiceToggleBtn" class="topbar-btn" title="Toggle Genox Speech Synthesis">
+            <span id="voiceIcon">🔊</span>
+            <span id="voiceLabel">SPEECH: ON</span>
+          </button>
+
+          <button id="settingsBtn" class="topbar-btn">
+            <span>⚙️</span>
+            <span>CONFIG</span>
+          </button>
+        </div>
+      </header>
+
+      <!-- Stage Scrollable Content Grid -->
+      <div class="stage-content-scroll">
+        <!-- Top Triad Section -->
+        <section class="core-overview-triad">
+          <!-- Left: AI Core Overview Card -->
+          <div class="hud-panel">
+            <div class="hud-panel-title">
+              <span>📊</span>
+              <span>AI CORE OVERVIEW</span>
+            </div>
+            <div class="core-metrics-list">
+              <div class="metric-row">
+                <div class="metric-label"><span>🌐</span> AI Core</div>
+                <div class="metric-val" style="color: var(--accent-cyan);">ACTIVE</div>
+              </div>
+              <div class="metric-row">
+                <div class="metric-label"><span>🧠</span> Memory</div>
+                <div class="metric-val" id="memoryMetricVal">3,380 STORED</div>
+              </div>
+              <div class="metric-row">
+                <div class="metric-label"><span>🔊</span> Voice Pipeline</div>
+                <div class="metric-val" style="color: var(--accent-emerald);">ONLINE</div>
+              </div>
+              <div class="metric-row">
+                <div class="metric-label"><span>🤖</span> Active Agents</div>
+                <div class="metric-val" style="color: var(--accent-purple);">6 RUNNING</div>
+              </div>
+              <div class="metric-row">
+                <div class="metric-label"><span>⚡</span> Engine</div>
+                <div class="metric-val" id="engineMetricVal" style="color: var(--accent-amber); font-size: 0.72rem;">GEMINI 3.1 FLASH-LITE</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Center: 3D Holographic Core & Talking Avatar Viewport -->
+          <div class="hud-panel hologram-viewport-card">
+            <!-- Mode Switcher -->
+            <div class="viewport-mode-toggle">
+              <button class="mode-toggle-btn active" id="btnModeSphere">🌐 3D AI CORE</button>
+              <button class="mode-toggle-btn" id="btnModeAvatar">🤖 AVATAR FACE</button>
+            </div>
+
+            <div class="viewport-display-frame">
+              <!-- Mode 1: 3D Wireframe Orbit Sphere Canvas -->
+              <canvas id="coreSphereCanvas"></canvas>
+
+              <!-- Mode 2: Talking Humanoid Cyber Avatar Face -->
+              <div class="avatar-face-container" id="avatarFaceContainer">
+                <div class="avatar-hud-ring-outer"></div>
+                <div class="avatar-hud-ring-inner"></div>
+                <div class="avatar-scanlines"></div>
+                <img src="/assets/avatar.jpg" alt="Cyber AI Avatar Face" id="avatarImg">
+                <div class="avatar-eye-flare left"></div>
+                <div class="avatar-eye-flare right"></div>
+                <div class="avatar-speech-wave" id="avatarSpeechWave">
+                  <span class="speech-bar"></span>
+                  <span class="speech-bar"></span>
+                  <span class="speech-bar"></span>
+                  <span class="speech-bar"></span>
+                  <span class="speech-bar"></span>
+                  <span class="speech-bar"></span>
+                  <span class="speech-bar"></span>
+                </div>
+              </div>
+            </div>
+
+            <div class="core-hud-title">
+              <h2 id="coreTitleText">GENOX</h2>
+              <span id="coreSubtitleText">AI CORE v3.1</span>
+            </div>
+          </div>
+
+          <!-- Right: Live Intelligence & Quick Actions -->
+          <div class="hud-panel">
+            <div class="hud-panel-title">
+              <span>⚡</span>
+              <span>QUICK ACTION COMMANDS</span>
+            </div>
+            <div class="quick-action-pills">
+              <div class="quick-pill" data-prompt="Audit my macOS system specs, available RAM, and active processes.">
+                <span>🖥️</span>
+                <div class="quick-pill-text">
+                  <h5>System Diagnostics</h5>
+                  <p>Check hardware, storage & processes</p>
+                </div>
+              </div>
+
+              <div class="quick-pill" data-prompt="Search for the latest breaking news in Artificial Intelligence today and summarize top 3 articles.">
+                <span>🌐</span>
+                <div class="quick-pill-text">
+                  <h5>Live AI Intelligence</h5>
+                  <p>Crawl live web & extract news</p>
+                </div>
+              </div>
+
+              <div class="quick-pill" data-prompt="Take a screenshot of my Mac screen and analyze what is open.">
+                <span>👁️</span>
+                <div class="quick-pill-text">
+                  <h5>Screen Perception</h5>
+                  <p>Capture display & visual sense</p>
+                </div>
+              </div>
+
+              <div class="quick-pill" data-prompt="Write a Python script to calculate Fibonacci numbers up to 100, execute it, and save the result in workspace.">
+                <span>🐍</span>
+                <div class="quick-pill-text">
+                  <h5>Python Sandbox</h5>
+                  <p>Execute scripts & auto-debug</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ACTIVE AGENTS SQUAD GRID (EXACT REFERENCE 3 MATCH) -->
+        <section class="hud-panel">
+          <div class="squad-section-header">
+            <div class="squad-section-title">
+              <span>🤖</span>
+              <span>ACTIVE AGENTS SQUAD</span>
+            </div>
+            <span style="font-size: 0.72rem; color: var(--text-dim); font-family: var(--font-mono);">6 SPECIALIZED UNITS ONLINE</span>
+          </div>
+
+          <div class="agents-squad-grid">
+            <!-- 1. Coding Agent -->
+            <div class="agent-squad-card" id="agentCardCoding">
+              <div class="agent-card-top">
+                <span class="agent-icon-badge">💻</span>
+                <span class="agent-dot-status"></span>
+              </div>
+              <div class="agent-name-role">
+                <h4>Coding Agent</h4>
+                <span>Active</span>
+              </div>
+              <div class="agent-mini-wave">
+                <span class="agent-mini-bar"></span>
+                <span class="agent-mini-bar"></span>
+                <span class="agent-mini-bar"></span>
+                <span class="agent-mini-bar"></span>
+                <span class="agent-mini-bar"></span>
+              </div>
+            </div>
+
+            <!-- 2. Research Agent -->
+            <div class="agent-squad-card" id="agentCardResearch">
+              <div class="agent-card-top">
+                <span class="agent-icon-badge">🔍</span>
+                <span class="agent-dot-status"></span>
+              </div>
+              <div class="agent-name-role">
+                <h4>Research Agent</h4>
+                <span>Active</span>
+              </div>
+              <div class="agent-mini-wave">
+                <span class="agent-mini-bar"></span>
+                <span class="agent-mini-bar"></span>
+                <span class="agent-mini-bar"></span>
+                <span class="agent-mini-bar"></span>
+                <span class="agent-mini-bar"></span>
+              </div>
+            </div>
+
+            <!-- 3. Browser Agent -->
+            <div class="agent-squad-card" id="agentCardBrowser">
+              <div class="agent-card-top">
+                <span class="agent-icon-badge">🌐</span>
+                <span class="agent-dot-status"></span>
+              </div>
+              <div class="agent-name-role">
+                <h4>Browser Agent</h4>
+                <span>Standby</span>
+              </div>
+              <div class="agent-mini-wave">
+                <span class="agent-mini-bar"></span>
+                <span class="agent-mini-bar"></span>
+                <span class="agent-mini-bar"></span>
+                <span class="agent-mini-bar"></span>
+                <span class="agent-mini-bar"></span>
+              </div>
+            </div>
+
+            <!-- 4. System Agent -->
+            <div class="agent-squad-card" id="agentCardSystem">
+              <div class="agent-card-top">
+                <span class="agent-icon-badge">🖥️</span>
+                <span class="agent-dot-status"></span>
+              </div>
+              <div class="agent-name-role">
+                <h4>System Agent</h4>
+                <span>Standby</span>
+              </div>
+              <div class="agent-mini-wave">
+                <span class="agent-mini-bar"></span>
+                <span class="agent-mini-bar"></span>
+                <span class="agent-mini-bar"></span>
+                <span class="agent-mini-bar"></span>
+                <span class="agent-mini-bar"></span>
+              </div>
+            </div>
+
+            <!-- 5. Vision Agent -->
+            <div class="agent-squad-card" id="agentCardVision">
+              <div class="agent-card-top">
+                <span class="agent-icon-badge">👁️</span>
+                <span class="agent-dot-status"></span>
+              </div>
+              <div class="agent-name-role">
+                <h4>Vision Agent</h4>
+                <span>Standby</span>
+              </div>
+              <div class="agent-mini-wave">
+                <span class="agent-mini-bar"></span>
+                <span class="agent-mini-bar"></span>
+                <span class="agent-mini-bar"></span>
+                <span class="agent-mini-bar"></span>
+                <span class="agent-mini-bar"></span>
+              </div>
+            </div>
+
+            <!-- 6. Memory Agent -->
+            <div class="agent-squad-card" id="agentCardMemory">
+              <div class="agent-card-top">
+                <span class="agent-icon-badge">🧠</span>
+                <span class="agent-dot-status"></span>
+              </div>
+              <div class="agent-name-role">
+                <h4>Memory Agent</h4>
+                <span>Standby</span>
+              </div>
+              <div class="agent-mini-wave">
+                <span class="agent-mini-bar"></span>
+                <span class="agent-mini-bar"></span>
+                <span class="agent-mini-bar"></span>
+                <span class="agent-mini-bar"></span>
+                <span class="agent-mini-bar"></span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Lower Telemetry Strip -->
+        <section class="lower-telemetry-grid">
+          <!-- System Monitor Radial Dials -->
+          <div class="hud-panel">
+            <div class="hud-panel-title">
+              <span>📈</span>
+              <span>SYSTEM MONITOR</span>
+            </div>
+            <div class="gauge-row">
+              <div class="radial-gauge-item">
+                <div class="gauge-circle">
+                  <svg viewBox="0 0 60 60">
+                    <circle class="gauge-bg" cx="30" cy="30" r="24"/>
+                    <circle class="gauge-fill" cx="30" cy="30" r="24" stroke-dasharray="150" stroke-dashoffset="40"/>
+                  </svg>
+                  <span class="gauge-val-text">24%</span>
+                </div>
+                <span class="gauge-caption">CPU LOAD</span>
+              </div>
+
+              <div class="radial-gauge-item">
+                <div class="gauge-circle">
+                  <svg viewBox="0 0 60 60">
+                    <circle class="gauge-bg" cx="30" cy="30" r="24"/>
+                    <circle class="gauge-fill" cx="30" cy="30" r="24" stroke-dasharray="150" stroke-dashoffset="65" style="stroke: var(--accent-purple);"/>
+                  </svg>
+                  <span class="gauge-val-text">56%</span>
+                </div>
+                <span class="gauge-caption">MEMORY</span>
+              </div>
+
+              <div class="radial-gauge-item">
+                <div class="gauge-circle">
+                  <svg viewBox="0 0 60 60">
+                    <circle class="gauge-bg" cx="30" cy="30" r="24"/>
+                    <circle class="gauge-fill" cx="30" cy="30" r="24" stroke-dasharray="150" stroke-dashoffset="95" style="stroke: var(--accent-emerald);"/>
+                  </svg>
+                  <span class="gauge-val-text">38%</span>
+                </div>
+                <span class="gauge-caption">STORAGE</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Mission Audit Log -->
+          <div class="hud-panel">
+            <div class="hud-panel-title">
+              <span>🕒</span>
+              <span>MISSION TIMELINE & AUDIT</span>
+            </div>
+            <div id="missionTimelineList" style="display: flex; flex-direction: column; gap: 6px; overflow-y: auto; max-height: 90px;">
+              <div style="font-size: 0.78rem; color: var(--text-muted); display: flex; justify-content: space-between;">
+                <span>• System initialization and agent boots</span>
+                <span style="font-family: var(--font-mono); color: var(--accent-cyan);">COMPLETED</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- LLM Matrix Status -->
+          <div class="hud-panel">
+            <div class="hud-panel-title">
+              <span>⚡</span>
+              <span>LLM MATRIX</span>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 8px;">
+              <div class="metric-row">
+                <span style="font-size: 0.78rem;">Google Gemini 3.1 Flash-Lite</span>
+                <span style="font-size: 0.72rem; color: var(--accent-emerald); font-family: var(--font-mono);">CONNECTED</span>
+              </div>
+              <div class="metric-row">
+                <span style="font-size: 0.78rem;">Anthropic Claude 3.7</span>
+                <span style="font-size: 0.72rem; color: var(--text-dim); font-family: var(--font-mono);">STANDBY</span>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <!-- FLOATING COMMAND CAPSULE DOCK -->
+      <div class="floating-command-dock">
+        <!-- Live Voice Hearing Subtitle HUD -->
+        <div class="voice-hud-capsule" id="voiceHearingPill">
+          <span class="voice-hud-dot"></span>
+          <span id="voiceHearingText">MIC READY // Say "Genox" or click mic to give command</span>
+        </div>
+
+        <div class="dock-capsule">
+          <div class="capsule-badge">
+            <span>⚡</span>
+            <span>GENOX COMMAND</span>
+          </div>
+
+          <input type="text" id="promptInput" class="command-input" placeholder="Say 'Genox' or give any command (e.g. 'Audit my system specs' or 'Search latest AI news')..." autocomplete="off">
+
+          <button id="micBtn" class="capsule-mic-btn" title="Click to speak">
+            <svg width="18" height="18" fill="currentColor" viewBox="0 0 24 24"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/><path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/></svg>
+          </button>
+
+          <button id="sendBtn" class="capsule-dispatch-btn">
+            <span id="sendBtnText">DISPATCH</span>
+            <span>➔</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- SLIDE-UP AUTONOMOUS REASONING & ACTION DRAWER -->
+      <div class="reasoning-drawer" id="reasoningDrawer">
+        <div class="drawer-header">
+          <div class="drawer-tabs">
+            <button class="drawer-tab-btn active" data-pane="paneStream">⚡ REASONING STREAM</button>
+            <button class="drawer-tab-btn" data-pane="paneFiles">📁 WORKSPACE FILES</button>
+            <button class="drawer-tab-btn" data-pane="paneMemory">🧠 MEMORY BANK</button>
+            <button class="drawer-tab-btn" data-pane="paneTools">⚙️ TOOLS & SKILLS</button>
+            <button class="drawer-tab-btn" data-pane="paneHistory">📜 MISSION LOGS</button>
+          </div>
+          <div style="display: flex; gap: 8px; align-items: center;">
+            <button id="clearDrawerBtn" class="topbar-btn" style="padding: 4px 10px; font-size: 0.72rem;">CLEAR</button>
+            <button id="closeDrawerBtn" class="topbar-btn" style="padding: 4px 10px; font-size: 0.72rem;">MINIMIZE ▾</button>
+          </div>
+        </div>
+
+        <div class="drawer-panes-wrapper">
+          <!-- Pane 1: Live Reasoning Stream -->
+          <div class="drawer-pane active" id="paneStream">
+            <div class="drawer-content" id="drawerContent">
+              <!-- Dynamic execution cards go here -->
+            </div>
+          </div>
+
+          <!-- Pane 2: Workspace Files -->
+          <div class="drawer-pane" id="paneFiles">
+            <div class="drawer-pane-subhead">
+              <span style="font-size: 0.8rem; color: var(--text-muted);">Workspace: <strong style="color: var(--accent-cyan); font-family: var(--font-mono);">/workspace</strong></span>
+              <button class="topbar-btn" id="refreshFilesBtn" style="font-size: 0.72rem; padding: 4px 10px;">↻ Refresh</button>
+            </div>
+            <div class="files-deck-grid" id="drawerFilesList"></div>
+          </div>
+
+          <!-- Pane 3: Memory Bank -->
+          <div class="drawer-pane" id="paneMemory">
+            <div class="drawer-pane-subhead" style="flex-wrap: wrap; gap: 10px;">
+              <span style="font-size: 0.8rem; color: var(--text-muted);">Long-Term Store: <strong style="color: var(--accent-cyan); font-family: var(--font-mono);">genox_memory.db</strong></span>
+              <div style="display: flex; gap: 8px; flex: 1; min-width: 280px;">
+                <input type="text" id="newMemKey" placeholder="Key (e.g. user_project)..." class="modal-input-field" style="max-width: 160px; padding: 6px 10px; font-size: 0.75rem;">
+                <input type="text" id="newMemVal" placeholder="Value (e.g. Genox AI System)..." class="modal-input-field" style="flex: 1; padding: 6px 10px; font-size: 0.75rem;">
+                <button class="capsule-dispatch-btn" id="addMemoryBtn" style="padding: 6px 12px; font-size: 0.75rem;">+ Save Fact</button>
+              </div>
+            </div>
+            <div class="memory-cards-grid" id="drawerMemoryList"></div>
+          </div>
+
+          <!-- Pane 4: Tools & Skills -->
+          <div class="drawer-pane" id="paneTools">
+            <div class="drawer-pane-subhead">
+              <span style="font-size: 0.8rem; color: var(--text-muted);">14 Built-In & Self-Created Autonomous Tools</span>
+              <span style="font-size: 0.72rem; color: var(--accent-emerald); font-family: var(--font-mono);">ACTIVE ENGINE LINK</span>
+            </div>
+            <div class="tools-catalog-grid" id="drawerToolsList"></div>
+          </div>
+
+          <!-- Pane 5: Mission Audit Logs -->
+          <div class="drawer-pane" id="paneHistory">
+            <div class="drawer-pane-subhead">
+              <span style="font-size: 0.8rem; color: var(--text-muted);">Mission Execution Timeline & Step Tracing</span>
+              <button class="topbar-btn" id="refreshHistoryBtn" style="font-size: 0.72rem; padding: 4px 10px;">↻ Refresh</button>
+            </div>
+            <div class="history-timeline-container" id="drawerHistoryList"></div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- CONFIG MODAL -->
+  <div id="configModal" class="modal-backdrop">
+    <div class="modal-sheet">
+      <h3>GENOX SYSTEM CONFIG</h3>
+      <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.5;">
+        Configure your <strong>100% Free Google AI Studio API Key</strong> below. Get it instantly from <a href="https://aistudio.google.com/" target="_blank" style="color: var(--accent-cyan);">aistudio.google.com</a>.
+      </p>
+
+      <div>
+        <label style="display: block; font-size: 0.75rem; font-family: var(--font-mono); color: var(--accent-cyan); margin-bottom: 6px;">GOOGLE GEMINI API KEY</label>
+        <input type="password" id="apiKeyInput" class="modal-input-field" placeholder="AIzaSy...">
+      </div>
+
+      <div>
+        <label style="display: block; font-size: 0.75rem; font-family: var(--font-mono); color: var(--accent-cyan); margin-bottom: 6px;">MODEL SELECTION</label>
+        <select id="modelSelect" class="modal-input-field" style="background: #0d1424; cursor: pointer;">
+          <option value="gemini-2.5-flash" selected>gemini-2.5-flash (Recommended: Ultra-fast & smart)</option>
+          <option value="gemini-2.0-flash">gemini-2.0-flash</option>
+          <option value="gemini-1.5-pro">gemini-1.5-pro</option>
+        </select>
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 8px;">
+        <button id="closeModalBtn" class="topbar-btn">CANCEL</button>
+        <button id="saveConfigBtn" class="capsule-dispatch-btn">SAVE CONFIG</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- FILE PREVIEW MODAL -->
+  <div id="filePreviewModal" class="modal-backdrop">
+    <div class="modal-sheet" style="max-width: 780px; max-height: 85vh;">
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <h3 id="previewFileName" style="font-size: 1.1rem;">File Preview</h3>
+        <button id="closePreviewBtn" class="topbar-btn" style="padding: 4px 10px;">✕</button>
+      </div>
+      <div id="previewFileContent" class="code-box" style="max-height: 60vh; font-size: 0.82rem; overflow-y: auto;"></div>
+    </div>
+  </div>
+
+  <script src="/js/app.js?v=18"></script>
+</body>
+</html>
